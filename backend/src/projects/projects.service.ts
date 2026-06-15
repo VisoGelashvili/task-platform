@@ -60,20 +60,35 @@ export class ProjectsService {
     return projects;
   }
 
-  async findOne(id: string, userId: string, role: string): Promise<ProjectDocument> {
-    const project = await this.projectModel
-      .findById(id)
-      .populate('owner members', 'name email')
-      .exec();
-
+  async findOne(id: string, userId: string, role: string) {
+    const project = await this.projectModel.findById(id).lean().exec();
     if (!project) throw new NotFoundException('Project not found');
 
-    const isMember = project.members.some((m: any) => String(m._id) === userId);
+    const memberIds: string[] = (project.members as any[]).map(m => String(m));
+    const ownerId = String(project.owner);
+
+    const isMember = memberIds.includes(userId);
     if (role !== 'admin' && !isMember) {
       throw new ForbiddenException('You are not a member of this project');
     }
 
-    return project;
+    // Manual population — avoids Mongoose 8 lean+populate serialization issues
+    const [ownerDoc, memberDocs] = await Promise.all([
+      this.usersService.findById(ownerId),
+      this.usersService.findManyByIds(memberIds),
+    ]);
+
+    const toMember = (u: any) => ({ _id: String(u._id), name: u.name, email: u.email });
+
+    return {
+      _id:         String((project as any)._id),
+      name:        project.name,
+      description: project.description,
+      createdAt:   (project as any).createdAt,
+      updatedAt:   (project as any).updatedAt,
+      owner:       ownerDoc ? toMember(ownerDoc) : null,
+      members:     (memberDocs as any[]).map(toMember),
+    };
   }
 
   async addMember(projectId: string, email: string, requesterId: string, requesterRole: string) {
@@ -125,6 +140,17 @@ export class ProjectsService {
     );
 
     return { message: 'Member removed' };
+  }
+
+  async delete(projectId: string, userId: string, role: string) {
+    const project = await this.projectModel.findById(projectId).exec();
+    if (!project) throw new NotFoundException('Project not found');
+    this.assertOwnerOrAdmin(project, userId, role, 'delete');
+    await this.projectModel.deleteOne({ _id: projectId });
+    // Bust the cache for every member so their project list refreshes
+    const keys = project.members.map(m => this.projectCacheKey(String(m)));
+    if (keys.length) await this.cacheService.del(...keys);
+    return { message: 'Project deleted' };
   }
 
   // Used by TasksService to gate all task operations behind project membership.

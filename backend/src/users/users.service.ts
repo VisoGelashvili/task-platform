@@ -38,6 +38,22 @@ export class UsersService {
       .exec();
   }
 
+  findManyByIds(ids: string[]) {
+    return this.userModel
+      .find({ _id: { $in: ids } })
+      .select('_id name email')
+      .lean()
+      .exec();
+  }
+
+  findAll() {
+    return this.userModel
+      .find({ isActive: true })
+      .select('_id email name')
+      .lean()
+      .exec();
+  }
+
   // Called once at startup — ensures there's always at least one admin
   async ensureAdminExists(): Promise<void> {
     const admin = await this.userModel.findOne({ role: UserRole.ADMIN }).exec();

@@ -7,6 +7,7 @@ import {
   Param,
   Request,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -37,6 +38,12 @@ export class ProjectsController {
   @Post(':id/members')
   addMember(@Param('id') id: string, @Body() dto: AddMemberDto, @Request() req) {
     return this.projectsService.addMember(id, dto.email, req.user.userId, req.user.role);
+  }
+
+  @Delete(':id')
+  @HttpCode(200)
+  deleteProject(@Param('id') id: string, @Request() req) {
+    return this.projectsService.delete(id, req.user.userId, req.user.role);
   }
 
   @Delete(':id/members/:memberId')
