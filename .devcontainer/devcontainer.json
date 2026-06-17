@@ -6,6 +6,7 @@
     "ghcr.io/devcontainers/features/node:1": { "version": "20" }
   },
   "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postAttachCommand": "npm run start:dev --prefix backend & npm start --prefix frontend",
   "forwardPorts": [4200, 3000],
   "portsAttributes": {
     "4200": {
