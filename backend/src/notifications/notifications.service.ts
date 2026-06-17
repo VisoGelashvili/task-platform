@@ -1,14 +1,18 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as amqp from 'amqplib';
-import { UsersService } from '../users/users.service';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import * as amqp from "amqplib";
+import { UsersService } from "../users/users.service";
 
 @Injectable()
 export class NotificationsService implements OnModuleInit, OnModuleDestroy {
-  // Same @types/amqplib type mismatch as EventsService — using 'any' to work around it
   private connection: any;
   private channel: any;
-  private readonly queue = 'task.assigned';
+  private readonly queue = "task.assigned";
   private readonly logger = new Logger(NotificationsService.name);
 
   constructor(
@@ -18,7 +22,9 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     try {
-      this.connection = await amqp.connect(this.config.get<string>('RABBITMQ_URL'));
+      this.connection = await amqp.connect(
+        this.config.get<string>("RABBITMQ_URL"),
+      );
       this.channel = await this.connection.createChannel();
       await this.channel.assertQueue(this.queue, { durable: true });
       this.channel.prefetch(1);
@@ -27,7 +33,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       );
       this.logger.log(`Listening on queue "${this.queue}"`);
     } catch (err) {
-      this.logger.warn(`Could not connect to RabbitMQ: ${err.message}`);
+      this.logger.warn(`Could not connect to RabbitMQ: ${(err as Error).message}`);
     }
   }
 
@@ -46,7 +52,6 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(
         `[Notification] → ${user.email}: You have been assigned to "${payload.taskTitle}"`,
       );
-      // In production: send an email here via SendGrid, SES, nodemailer, etc.
     }
 
     this.channel.ack(msg);

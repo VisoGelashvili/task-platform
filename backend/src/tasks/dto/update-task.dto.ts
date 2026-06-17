@@ -5,10 +5,9 @@ import {
   IsEnum,
   IsDateString,
   IsMongoId,
-} from 'class-validator';
-import { TaskStatus, TaskPriority } from '../schemas/task.schema';
+} from "class-validator";
+import { TaskStatus, TaskPriority } from "../schemas/task.schema";
 
-// Same shape as CreateTaskDto but every field is optional
 export class UpdateTaskDto {
   @IsString()
   @MinLength(2)

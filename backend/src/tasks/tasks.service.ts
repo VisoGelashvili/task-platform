@@ -3,16 +3,16 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
-} from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Task, TaskDocument } from './schemas/task.schema';
-import { ProjectsService } from '../projects/projects.service';
-import { SearchService } from '../search/search.service';
-import { EventsService } from '../events/events.service';
-import { CacheService } from '../cache/cache.service';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
+} from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { Task, TaskDocument } from "./schemas/task.schema";
+import { ProjectsService } from "../projects/projects.service";
+import { SearchService } from "../search/search.service";
+import { EventsService } from "../events/events.service";
+import { CacheService } from "../cache/cache.service";
+import { CreateTaskDto } from "./dto/create-task.dto";
+import { UpdateTaskDto } from "./dto/update-task.dto";
 
 @Injectable()
 export class TasksService {
@@ -34,12 +34,20 @@ export class TasksService {
     userId: string,
     role: string,
   ): Promise<TaskDocument> {
-    const project = await this.projectsService.assertMembership(projectId, userId, role);
+    const project = await this.projectsService.assertMembership(
+      projectId,
+      userId,
+      role,
+    );
 
     if (dto.assigneeId) {
-      const isAssigneeMember = project.members.some((m) => String(m) === dto.assigneeId);
+      const isAssigneeMember = project.members.some(
+        (m) => String(m) === dto.assigneeId,
+      );
       if (!isAssigneeMember) {
-        throw new BadRequestException('Assignee must be a member of this project');
+        throw new BadRequestException(
+          "Assignee must be a member of this project",
+        );
       }
     }
 
@@ -55,7 +63,7 @@ export class TasksService {
     await this.cacheService.del(this.taskCacheKey(projectId));
 
     if (assigneeId) {
-      await this.eventsService.publish('task.assigned', {
+      await this.eventsService.publish("task.assigned", {
         taskId: String(task._id),
         taskTitle: task.title,
         assigneeId,
@@ -71,12 +79,12 @@ export class TasksService {
 
     const key = this.taskCacheKey(projectId);
     const cached = await this.cacheService.get(key);
-    if (cached) return cached; // cache HIT
+    if (cached) return cached;
 
     const tasks = await this.taskModel
       .find({ project: projectId })
-      .populate('assignee createdBy', 'name email')
-      .lean() // plain objects — safe to serialise into Redis
+      .populate("assignee createdBy", "name email")
+      .lean()
       .exec();
 
     await this.cacheService.set(key, tasks, 30);
@@ -92,9 +100,9 @@ export class TasksService {
     await this.projectsService.assertMembership(projectId, userId, role);
     const task = await this.taskModel
       .findOne({ _id: taskId, project: projectId })
-      .populate('assignee createdBy', 'name email')
+      .populate("assignee createdBy", "name email")
       .exec();
-    if (!task) throw new NotFoundException('Task not found');
+    if (!task) throw new NotFoundException("Task not found");
     return task;
   }
 
@@ -105,37 +113,50 @@ export class TasksService {
     userId: string,
     role: string,
   ): Promise<TaskDocument> {
-    const project = await this.projectsService.assertMembership(projectId, userId, role);
+    const project = await this.projectsService.assertMembership(
+      projectId,
+      userId,
+      role,
+    );
 
-    const task = await this.taskModel.findOne({ _id: taskId, project: projectId }).exec();
-    if (!task) throw new NotFoundException('Task not found');
+    const task = await this.taskModel
+      .findOne({ _id: taskId, project: projectId })
+      .exec();
+    if (!task) throw new NotFoundException("Task not found");
 
     if (dto.assigneeId) {
-      const isAssigneeMember = project.members.some((m) => String(m) === dto.assigneeId);
+      const isAssigneeMember = project.members.some(
+        (m) => String(m) === dto.assigneeId,
+      );
       if (!isAssigneeMember) {
-        throw new BadRequestException('Assignee must be a member of this project');
+        throw new BadRequestException(
+          "Assignee must be a member of this project",
+        );
       }
     }
 
     const { assigneeId, ...rest } = dto;
     const previousAssigneeId = task.assignee ? String(task.assignee) : null;
     const newAssigneeId =
-      assigneeId !== undefined ? (assigneeId || null) : previousAssigneeId;
+      assigneeId !== undefined ? assigneeId || null : previousAssigneeId;
 
     const updated = await this.taskModel
       .findByIdAndUpdate(
         taskId,
-        { ...rest, ...(assigneeId !== undefined && { assignee: assigneeId || null }) },
+        {
+          ...rest,
+          ...(assigneeId !== undefined && { assignee: assigneeId || null }),
+        },
         { new: true },
       )
-      .populate('assignee createdBy', 'name email')
+      .populate("assignee createdBy", "name email")
       .exec();
 
     await this.searchService.indexTask(updated);
     await this.cacheService.del(this.taskCacheKey(projectId));
 
     if (newAssigneeId && newAssigneeId !== previousAssigneeId) {
-      await this.eventsService.publish('task.assigned', {
+      await this.eventsService.publish("task.assigned", {
         taskId: String(task._id),
         taskTitle: updated.title,
         assigneeId: newAssigneeId,
@@ -152,21 +173,29 @@ export class TasksService {
     userId: string,
     role: string,
   ): Promise<{ message: string }> {
-    const project = await this.projectsService.assertMembership(projectId, userId, role);
+    const project = await this.projectsService.assertMembership(
+      projectId,
+      userId,
+      role,
+    );
 
-    const task = await this.taskModel.findOne({ _id: taskId, project: projectId }).exec();
-    if (!task) throw new NotFoundException('Task not found');
+    const task = await this.taskModel
+      .findOne({ _id: taskId, project: projectId })
+      .exec();
+    if (!task) throw new NotFoundException("Task not found");
 
     const isCreator = String(task.createdBy) === userId;
     const isProjectOwner = String(project.owner) === userId;
-    if (role !== 'admin' && !isCreator && !isProjectOwner) {
-      throw new ForbiddenException('Only the task creator or project owner can delete this task');
+    if (role !== "admin" && !isCreator && !isProjectOwner) {
+      throw new ForbiddenException(
+        "Only the task creator or project owner can delete this task",
+      );
     }
 
     await task.deleteOne();
     await this.searchService.removeTask(String(task._id));
     await this.cacheService.del(this.taskCacheKey(projectId));
 
-    return { message: 'Task deleted' };
+    return { message: "Task deleted" };
   }
 }

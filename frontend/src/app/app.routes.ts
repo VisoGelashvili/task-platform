@@ -1,53 +1,59 @@
-import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth.guard';
-import { adminGuard } from './core/guards/admin.guard';
+import { Routes } from "@angular/router";
+import { authGuard } from "./core/guards/auth.guard";
+import { adminGuard } from "./core/guards/admin.guard";
 
-// Lazy-loaded routes — each component is only downloaded when its route is visited.
-// The shell route wraps all protected pages so the navbar is always shown.
 export const routes: Routes = [
   {
-    path: 'login',
+    path: "login",
     loadComponent: () =>
-      import('./features/auth/login/login.component').then(m => m.LoginComponent),
+      import("./features/auth/login/login.component").then(
+        (m) => m.LoginComponent,
+      ),
   },
   {
-    path: 'register',
+    path: "register",
     loadComponent: () =>
-      import('./features/auth/register/register.component').then(m => m.RegisterComponent),
+      import("./features/auth/register/register.component").then(
+        (m) => m.RegisterComponent,
+      ),
   },
   {
-    path: '',
+    path: "",
     loadComponent: () =>
-      import('./features/shell/shell.component').then(m => m.ShellComponent),
+      import("./features/shell/shell.component").then((m) => m.ShellComponent),
     canActivate: [authGuard],
     children: [
-      { path: '', redirectTo: 'projects', pathMatch: 'full' },
+      { path: "", redirectTo: "projects", pathMatch: "full" },
       {
-        path: 'projects',
+        path: "projects",
         loadComponent: () =>
-          import('./features/projects/project-list/project-list.component').then(
-            m => m.ProjectListComponent,
+          import("./features/projects/project-list/project-list.component").then(
+            (m) => m.ProjectListComponent,
           ),
       },
       {
-        path: 'projects/:id',
+        path: "projects/:id",
         loadComponent: () =>
-          import('./features/projects/project-detail/project-detail.component').then(
-            m => m.ProjectDetailComponent,
+          import("./features/projects/project-detail/project-detail.component").then(
+            (m) => m.ProjectDetailComponent,
           ),
       },
       {
-        path: 'search',
+        path: "search",
         loadComponent: () =>
-          import('./features/search/search.component').then(m => m.SearchComponent),
+          import("./features/search/search.component").then(
+            (m) => m.SearchComponent,
+          ),
       },
       {
-        path: 'admin',
+        path: "admin",
         loadComponent: () =>
-          import('./features/admin/admin.component').then(m => m.AdminComponent),
+          import("./features/admin/admin.component").then(
+            (m) => m.AdminComponent,
+          ),
         canActivate: [adminGuard],
       },
     ],
   },
-  { path: '**', redirectTo: 'projects' },
+  { path: "**", redirectTo: "projects" },
 ];

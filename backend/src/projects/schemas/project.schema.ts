@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document, Types } from "mongoose";
 
 export type ProjectDocument = Project & Document;
 
@@ -11,12 +11,10 @@ export class Project {
   @Prop()
   description: string;
 
-  // The user who created the project
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: Types.ObjectId, ref: "User", required: true })
   owner: Types.ObjectId;
 
-  // Everyone who can see and work in this project (owner is always included)
-  @Prop([{ type: Types.ObjectId, ref: 'User' }])
+  @Prop([{ type: Types.ObjectId, ref: "User" }])
   members: Types.ObjectId[];
 }
 

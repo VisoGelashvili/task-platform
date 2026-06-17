@@ -1,12 +1,14 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as amqp from 'amqplib';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import * as amqp from "amqplib";
 
 @Injectable()
 export class EventsService implements OnModuleInit, OnModuleDestroy {
-  // Typed as 'any' because @types/amqplib@0.10.x exposes 'ChannelModel' as the
-  // actual return type of connect(), which conflicts with its own 'Connection' alias.
-  // The runtime behaviour is correct regardless of the declared type.
   private connection: any;
   private channel: any;
   private readonly logger = new Logger(EventsService.name);
@@ -15,11 +17,13 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     try {
-      this.connection = await amqp.connect(this.config.get<string>('RABBITMQ_URL'));
+      this.connection = await amqp.connect(
+        this.config.get<string>("RABBITMQ_URL"),
+      );
       this.channel = await this.connection.createChannel();
-      this.logger.log('EventsService connected to RabbitMQ');
+      this.logger.log("EventsService connected to RabbitMQ");
     } catch (err) {
-      this.logger.warn(`Could not connect to RabbitMQ: ${err.message}`);
+      this.logger.warn(`Could not connect to RabbitMQ: ${(err as Error).message}`);
     }
   }
 
@@ -30,15 +34,13 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
 
   async publish(queue: string, payload: object): Promise<void> {
     if (!this.channel) {
-      this.logger.warn('RabbitMQ channel not ready — event dropped');
+      this.logger.warn("RabbitMQ channel not ready — event dropped");
       return;
     }
     await this.channel.assertQueue(queue, { durable: true });
-    this.channel.sendToQueue(
-      queue,
-      Buffer.from(JSON.stringify(payload)),
-      { persistent: true },
-    );
+    this.channel.sendToQueue(queue, Buffer.from(JSON.stringify(payload)), {
+      persistent: true,
+    });
     this.logger.debug(`Published to "${queue}": ${JSON.stringify(payload)}`);
   }
 }

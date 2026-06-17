@@ -1,18 +1,18 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document, Types } from "mongoose";
 
 export type TaskDocument = Task & Document;
 
 export enum TaskStatus {
-  TODO = 'todo',
-  IN_PROGRESS = 'in-progress',
-  DONE = 'done',
+  TODO = "todo",
+  IN_PROGRESS = "in-progress",
+  DONE = "done",
 }
 
 export enum TaskPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
 }
 
 @Schema({ timestamps: true })
@@ -32,14 +32,13 @@ export class Task {
   @Prop()
   dueDate: Date;
 
-  @Prop({ type: Types.ObjectId, ref: 'Project', required: true })
+  @Prop({ type: Types.ObjectId, ref: "Project", required: true })
   project: Types.ObjectId;
 
-  // null until someone is assigned
-  @Prop({ type: Types.ObjectId, ref: 'User', default: null })
+  @Prop({ type: Types.ObjectId, ref: "User", default: null })
   assignee: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: Types.ObjectId, ref: "User", required: true })
   createdBy: Types.ObjectId;
 }
 
